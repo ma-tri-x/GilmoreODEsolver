@@ -11,7 +11,7 @@
 using namespace std;
 
 //############################################################################################//
-//############# Programm based on my 2012SoSe/Programmieren/sheet02 ##########################//
+//############# Program based on my 2012SoSe/Programmieren/sheet02 ###########################//
 //############################################################################################//
 //############# Runke Kutta 3rd order with adaptive time step handling #######################//
 //############# solving the Gilmore Model with Van-der-Waals and acoustic pressure ###########//
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])  // argumentscounter, charfeld, in das Eingaben
      cerr << "Usage: "<< argv[0] << " <Rstart> <vStart> <Rn> <deltaT> <Tstart> <Tend>" << endl;
      cerr                        << " <p_atm> <p_ac> <f> <bVan[m^3/kg]> <mu> <sigma> " << endl;
      cerr                        << " <BTait> <nTait> <kappa> <pv> <rhoLiq> <SpecGasConst Bubble>" << endl;
-     cerr                        << " <TempRef °C> <T0> <epsilon>" << endl;
+     cerr                        << " <TempRef °C> <T0> <epsilon> <Rn2> <t1> <t2>" << endl;
      exit(1);
    }else if (atof(argv[21])>=0.999999 || atof(argv[21])<=0.){
      cerr << "epsilon is too high or negative";
@@ -205,8 +205,12 @@ int main(int argc, char *argv[])  // argumentscounter, charfeld, in das Eingaben
    long double T0          = atof(argv[20]); // s;  scaling the time!
    long double epsilon     = atof(argv[21]);// was: 1e-2;
                phase       = atof(argv[22]);// was: 1e-2;
+   long double Rn2         = atof(argv[23]); // m
+   long double t1          = atof(argv[24]); // s
+   long double t2          = atof(argv[25]); // s
    cout << "phase=" << phase << endl;
 
+   long double Rn1 = Rn;
        //phase = phase/180.*M_PI;   
        long double rho0vRef = patm/(SpecGasConst*TempRef); // kg/m^3 of vapour or gas at starting radius
        long double rho0v    = rho0vRef * (Rn/Rstart)* (Rn/Rstart)* (Rn/Rstart);
@@ -275,13 +279,33 @@ int main(int argc, char *argv[])  // argumentscounter, charfeld, in das Eingaben
  plot << "#   SpecGasConst=" << SpecGasConst << "J/molK" << endl;
  plot << "#   TempRef="      << TempRef      << "deg Celsius." << endl;
  plot << "#   T0="           << T0           <<  endl;
+ plot << "#   Rn2"           << Rn2          << "m"; // m
+ plot << "#   t1"            << t1           << "s"; // s
+ plot << "#   t2"            << t2           << "s"; // s
  plot << "# "                                << endl;
+ 
  plot << "#t[s]\tr[m]\tv[m/s]\tdT [s]\tpBubble[Pa]\tp_ac[Pa]" << endl;
  plot << sc_t*T0 << "\t" << r*Rn << "\t" << v*U << "\t" << sc_dt*T0 << "\t" << ((sc_patm + 2*sc_sigma - sc_pv)*ThePower(r)+sc_pv)*pscale << "\t" << pBubble(sc_t,r,v)[0]*pscale << endl;
 //  plot2 << "#t\tr\tv\tdt\tpBubble" << endl;
 //  plot2 << sc_t << "\t" << r << "\t" << v << "\t" << sc_dt << "\t" << sc_p << endl;
  while (sc_t<sc_Tend)
    {
+    if (sc_t*T0 >= t1 && sc_t*T0 <= t2){
+        Rn = (Rn2 - Rn1)/(t2 - t1)*(sc_t*T0 - t1);
+        /********************re-scaling!**********/
+        r = r*Rn1/Rn;
+        U = Rn/T0;
+        v = (v*Rn1/T0)/U;
+        pscale = rho0*U*U;
+        sc_patm = patm/pscale;
+        sc_pac  = pac/pscale;
+        sc_pv   = pv/pscale;
+        sc_BTait = BTait/pscale;
+        sc_mu = mu/(pscale*Rn)*U;
+        sc_sigma = sigma/(pscale*Rn);
+        sc_c0 = sqrt((sc_patm+sc_BTait)*nTait); // bec. sc_rho0=1
+        /**************************************/
+    }
 	long double old_t = sc_t;
 	  Runge_Kutta_embedded(r,v,sc_p,sc_dt,sc_t,epsilon); // dt wird in der Funktion verändert
 	if (isnan(r)||isnan(v)||isnan(sc_p)||isnan(sc_dt)|| isnan(sc_t)){
