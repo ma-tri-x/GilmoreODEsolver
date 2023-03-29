@@ -161,6 +161,7 @@ int main(int argc, char *argv[])  // argumentscounter, charfeld, in das Eingaben
     long double Tstart      = atof(argv[5]); // s
     long double Tend        = atof(argv[6]); // s
                 patm        = atof(argv[7]); // Pa
+                Rn = Rn * pow(101315./patm ,1./3.);
                 pac         = atof(argv[8]); // Pa
     long double f           = atof(argv[9]); // Hz
                     omega=2.*M_PI*f;
@@ -177,6 +178,7 @@ int main(int argc, char *argv[])  // argumentscounter, charfeld, in das Eingaben
     long double epsilon     = atof(argv[20]);// was: 1e-2;
                 phase       = atof(argv[21]);// was: 1e-2;
                 Rn2         = atof(argv[22]); // m
+                Rn2 = Rn2 * pow(101315./patm ,1./3.);
     long double t1          = atof(argv[23]); // s
     long double t2          = atof(argv[24]); // s
 
